@@ -1,0 +1,5 @@
+window.templates = {}
+<% Rails.root.join('app/assets/templates/').each_child.each do |file| %>
+<% depend_on(file.expand_path) %>
+window.templates["<%=File.basename(file, '.html.haml')%>"] = <%= Haml::Engine.new(File.read(file)).render.to_json %>
+<% end %>

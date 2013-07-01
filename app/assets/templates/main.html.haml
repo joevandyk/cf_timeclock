@@ -1,5 +1,5 @@
 #timer
-  %h3 CrossFit Kenmore Workout Timer
+  %h3 CrossFit Kenmore Workout
 
   %h2(class="alert" ng-show="qotd") {{ qotd }}
   .countdown(ng-class="{'alert alert-info': workoutDone}")
@@ -30,6 +30,10 @@
         %li Total Workout Time:  <span timer=totalWorkoutTime() />
         / %li Total Workout Time in Seconds:  {{ totalWorkoutTime() }}
         %li Prep Time:  {{ prepTime() }}
+        %li
+          %a(href="/joe") test link
+        %li
+          %a(href="/bad") bad test link
 
       %hr
 

@@ -6,26 +6,29 @@
     h3(ng-show="workoutDone") DONE! Great Job!
     h1(timer="workoutTime")
     h5 Time Left: <span timer="timeLeft()" />
-    .progress.progress-striped(ng-class="{'active': inProgress && !paused}")
+    .progress.progress-striped(ng-class="{'active': state == 'working'}")
       .bar ng-style="{width:percentDone() + '%'}"
 
   hr
 
   .row
     .span6
-      button(class='btn btn-primary btn-large' ng-disabled="!workoutForm.$valid" ng-show="canStart()" ng-click="start()") Start
+      button(class='btn btn-primary btn-large' ng-disabled="!workoutForm.$valid" ng-show="canStart()" ng-click="go()") Start
+      button(class='btn btn-large' ng-show="canContinue()" ng-click="go()") Continue
       button(class='btn btn-large' ng-show="canPause()" ng-click="pause()") Pause
       button<(class='btn btn-large' ng-show="canReset()" ng-click="reset()") Reset
 
       h4 Summary / Debug
       ul
+        li Current State: {{ state }}
         li Number of Sets: {{ numberOfSets() }}
         li Rest Between Sets: <span timer="restBetweenSets()" />
         li Number of Rounds: {{ numberOfRounds() }}
         li Length of Round:  <span timer="lengthOfRound()" />
         li Rest Between Rounds: <span timer="restBetweenRounds()" />
         li Total Workout Time:  <span timer=totalWorkoutTime() />
-        li Total Workout Time in Seconds:  {{ totalWorkoutTime() }}
+        / li Total Workout Time in Seconds:  {{ totalWorkoutTime() }}
+        li Prep Time:  {{ prepTime() }}
 
       hr
 
@@ -46,6 +49,7 @@
           label <input required min=1 type=number ng-model="input.rounds" /> Number Of Rounds
           label <input required min=1 type=number ng-model="input.roundLength" /> Length of Round
           label <input required min=0 ng-model="input.roundRest" /> Rest Between Rounds
+          label <input required min=0 ng-model="input.prepTime" /> Prep Time
           label <input min=0 ng-model="qotd" </input> Quote Of The Day
 
   hr

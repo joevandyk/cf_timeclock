@@ -43,8 +43,8 @@ app.controller "MainCtrl", ($scope, $timeout) ->
 
   angular.element(document).bind 'keyup', (event) ->
     if event.keyCode == 13
-      if $scope.canStart()
-        $scope.start()
+      if $scope.canGo()
+        $scope.go()
       else if $scope.canPause()
         $scope.pause()
 
@@ -58,44 +58,57 @@ app.controller "MainCtrl", ($scope, $timeout) ->
     "Loud sounds at start of workout, at end of rounds/sets, and at end of workout (should be loud enough to hear over music)"
   ]
 
-  $scope.canStart = ->
-    $scope.paused || !$scope.inProgress
-  $scope.canPause = ->
-    $scope.inProgress && !$scope.paused
-  $scope.canReset = ->
-    $scope.paused || $scope.workoutDone
+
+  $scope.canGo       = -> $scope.canStart() or $scope.canContinue()
+  $scope.canStart    = -> $scope.state == 'unstarted'
+  $scope.canContinue = -> $scope.state == 'paused'
+  $scope.canPause    = -> $scope.state == 'working'
+  $scope.canReset    = -> $scope.state == 'paused' || $scope.state == 'finished'
+
+  updateInterval = 25
+
+  workingCb = ->
+    $scope.workoutTime = currentTime() - $scope.startTime - $scope.pausedLength
+    if $scope.workoutTime >= $scope.totalWorkoutTime()
+      $scope.state = 'finished'
+      $scope.workoutTime = $scope.totalWorkoutTime()
+    else if $scope.state == 'working'
+      $timeout workingCb, updateInterval
+
+  preppingCb = ->
+    $scope.prepTime = currentTime() - $scope.prepStartTime - $scope.pausedLength
+    if $scope.prepTime >= $scope.totalWorkoutTime()
+      $scope.state = 'finished'
+      $scope.workoutTime = $scope.totalWorkoutTime()
+    else if $scope.state == 'working'
+      $timeout workingCb, updateInterval
+
+  $scope.go = ->
+    if $scope.state == 'unstarted'
+      $scope.start()
+    else
+      $scope.continue()
 
   $scope.start = ->
-    if !$scope.inProgress
+    if $scope.prepTime() > 0
+      $scope.prepStartTime = currentTime()
+      preppingCb
+    else
       $scope.startTime = currentTime()
-    $scope.inProgress = true
-    $scope.workoutDone = false
+      $scope.state = "working"
+    $timeout workingCb
 
-    if $scope.paused
-      $scope.pausedLength += currentTime() - $scope.pausedAt
-      $scope.paused = false
-
-    updateInterval = 25
-
-    fn = ->
-      $scope.workoutTime = currentTime() - $scope.startTime - $scope.pausedLength
-
-      if $scope.workoutTime >= $scope.totalWorkoutTime()
-        $scope.inProgress = false
-        $scope.workoutDone = true
-        $scope.workoutTime = $scope.totalWorkoutTime()
-
-      else if !$scope.paused
-        $timeout fn, updateInterval
-
+  $scope.continue = ->
+    $scope.pausedLength += currentTime() - $scope.pausedAt
+    $scope.state = 'working'
     $timeout fn, updateInterval
 
   $scope.pause = ->
-    $scope.paused = true
+    $scope.state = 'paused'
     $scope.pausedAt = currentTime()
 
   $scope.reset = ->
-    $scope.workoutDone = $scope.paused = $scope.inProgress = false
+    $scope.state = 'unstarted'
     $scope.startTime = null
     $scope.workoutTime = $scope.pausedLength = 0
 
@@ -124,6 +137,7 @@ app.controller "MainCtrl", ($scope, $timeout) ->
   # Sets the inputs from a predetermined workout type
   $scope.$watch "workoutType", (n) ->
     $scope.input = n if n
+    $scope.input.prepTime = 3
 
   $scope.timeLeft =       -> $scope.totalWorkoutTime() - $scope.workoutTime
 
@@ -133,6 +147,7 @@ app.controller "MainCtrl", ($scope, $timeout) ->
   $scope.lengthOfRound     = -> formatInputIntoTime($scope.input.roundLength)
   $scope.restBetweenRounds = -> formatInputIntoTime($scope.input.roundRest)
   $scope.restBetweenSets   = -> formatInputIntoTime($scope.input.setRest)
+  $scope.prepTime          = -> formatInputIntoTime($scope.input.prepTime)
 
   $scope.totalWorkoutTime = ->
     rounds = $scope.lengthOfRound() * $scope.numberOfRounds()

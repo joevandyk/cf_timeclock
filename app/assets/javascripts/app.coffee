@@ -62,7 +62,7 @@ app.controller "MainCtrl", ($scope, $timeout) ->
   $scope.canGo       = -> $scope.canStart() or $scope.canContinue()
   $scope.canStart    = -> $scope.state == 'unstarted'
   $scope.canContinue = -> $scope.state == 'paused'
-  $scope.canPause    = -> $scope.state == 'working'
+  $scope.canPause    = -> $scope.state == 'working' or $scope.state == 'prepping'
   $scope.canReset    = -> $scope.state == 'paused' || $scope.state == 'finished'
 
   updateInterval = 25
@@ -72,16 +72,21 @@ app.controller "MainCtrl", ($scope, $timeout) ->
     if $scope.workoutTime >= $scope.totalWorkoutTime()
       $scope.state = 'finished'
       $scope.workoutTime = $scope.totalWorkoutTime()
-    else if $scope.state == 'working'
+    else if $scope.state != 'paused'
       $timeout workingCb, updateInterval
 
   preppingCb = ->
-    $scope.prepTime = currentTime() - $scope.prepStartTime - $scope.pausedLength
-    if $scope.prepTime >= $scope.totalWorkoutTime()
-      $scope.state = 'finished'
-      $scope.workoutTime = $scope.totalWorkoutTime()
-    else if $scope.state == 'working'
-      $timeout workingCb, updateInterval
+    $scope.workoutTime = $scope.prepTime() - (currentTime() - $scope.prepStartTime) + $scope.pausedLength
+    if $scope.workoutTime > 0
+      if $scope.state != 'paused'
+        $timeout preppingCb, updateInterval
+    else
+      # TODO remove duplication
+      $scope.state = "working"
+      $scope.startTime = currentTime()
+      $scope.workoutStarted = true
+      $timeout workingCb
+
 
   $scope.go = ->
     if $scope.state == 'unstarted'
@@ -91,17 +96,23 @@ app.controller "MainCtrl", ($scope, $timeout) ->
 
   $scope.start = ->
     if $scope.prepTime() > 0
+      $scope.state = "prepping"
       $scope.prepStartTime = currentTime()
-      preppingCb
+      $timeout preppingCb
     else
-      $scope.startTime = currentTime()
       $scope.state = "working"
-    $timeout workingCb
+      $scope.startTime = currentTime()
+      $scope.workoutStarted = true
+      $timeout workingCb
 
   $scope.continue = ->
     $scope.pausedLength += currentTime() - $scope.pausedAt
-    $scope.state = 'working'
-    $timeout fn, updateInterval
+    if $scope.workoutStarted
+      $scope.state = 'working'
+      $timeout workingCb, updateInterval
+    else
+      $scope.state = 'prepping'
+      $timeout preppingCb, updateInterval
 
   $scope.pause = ->
     $scope.state = 'paused'
@@ -110,7 +121,8 @@ app.controller "MainCtrl", ($scope, $timeout) ->
   $scope.reset = ->
     $scope.state = 'unstarted'
     $scope.startTime = null
-    $scope.workoutTime = $scope.pausedLength = 0
+    $scope.workoutTime = $scope.prepTime()
+    $scope.pausedLength = 0
 
   $scope.input = {}
 
@@ -137,7 +149,7 @@ app.controller "MainCtrl", ($scope, $timeout) ->
   # Sets the inputs from a predetermined workout type
   $scope.$watch "workoutType", (n) ->
     $scope.input = n if n
-    $scope.input.prepTime = 3
+    $scope.workoutTime = $scope.input.prepTime = 3
 
   $scope.timeLeft =       -> $scope.totalWorkoutTime() - $scope.workoutTime
 

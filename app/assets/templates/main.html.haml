@@ -1,0 +1,60 @@
+#timer
+  %h3 CrossFit Kenmore Workout Timer
+
+  %h2(class="alert" ng-show="qotd") {{ qotd }}
+  .countdown(ng-class="{'alert alert-info': workoutDone}")
+    %h3(ng-show="workoutDone") DONE! Great Job!
+    %h1(timer="workoutTime")
+    %h5 Time Left: <span timer="timeLeft()" />
+    .progress.progress-striped(ng-class="{'active': state == 'working'}")
+      .bar(ng-style="{width:percentDone() + '%'}")
+
+  %hr
+
+  .row
+    .span6
+      %button(class='btn btn-primary btn-large' ng-show="workoutForm.$valid && canStart()" ng-click="go()") Start
+      %div(class='alert alert-error' ng-show="!workoutForm.$valid") Please make sure all the form fields are entered.
+      %button(class='btn btn-primary btn-large' ng-show="canContinue()" ng-click="go()") Continue
+      %button(class='btn btn-large' ng-show="canPause()" ng-click="pause()") Pause
+      %button(class='btn btn-large' ng-show="canReset()" ng-click="reset()") Reset
+
+      %h4 Summary / Debug
+      %ul
+        %li Current State: {{ state }}
+        %li Number of Sets: {{ numberOfSets() }}
+        %li Rest Between Sets: <span timer="restBetweenSets()" />
+        %li Number of Rounds: {{ numberOfRounds() }}
+        %li Length of Round:  <span timer="lengthOfRound()" />
+        %li Rest Between Rounds: <span timer="restBetweenRounds()" />
+        %li Total Workout Time:  <span timer=totalWorkoutTime() />
+        / %li Total Workout Time in Seconds:  {{ totalWorkoutTime() }}
+        %li Prep Time:  {{ prepTime() }}
+
+      %hr
+
+      %p TODO
+      %ul
+        %li(ng-repeat="todo in todos") {{ todo }}
+
+    .span6
+      %form(ng-show="canStart()" name="workoutForm" )
+        %h5(class="label label-info") Setup Workout
+        %label
+          %select(ng-model="workoutType" ng-options="workout.title for workout in workoutTypes")
+          Workout Type
+
+        %label(ng-show="workoutType.title != 'Custom' && !input.customize")
+          %button(ng-click="input.customize=true") Customize
+
+        .custom(ng-show="customized()")
+          %label <input required value=1 min=1 type=number ng-model="input.sets" /> Number Of Sets
+          %label <input required value=0 min=0 type=number ng-model="input.setRest" /> Rest Between Sets
+          %label <input required min=1 type=number ng-model="input.rounds" /> Number Of Rounds
+          %label <input required min=1 type=number ng-model="input.roundLength" /> Length of Round
+          %label <input required min=0 ng-model="input.roundRest" /> Rest Between Rounds
+        %label <input required min=0 ng-model="input.prepTime" /> Prep Time
+        %label <input min=0 ng-model="qotd" </input> Quote Of The Day
+
+  %hr
+  &copy; 2013 Joe Van Dyk

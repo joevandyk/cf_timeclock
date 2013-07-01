@@ -3,7 +3,7 @@ app = angular.module("cfTimeclockApp", [])
 app.config ($routeProvider, $locationProvider) ->
   $locationProvider.html5Mode(true)
   $routeProvider.when("/",
-    templateUrl: "views/main.html"
+    templateUrl: "assets/main.html"
     controller: "MainCtrl"
   ).otherwise redirectTo: "/"
 

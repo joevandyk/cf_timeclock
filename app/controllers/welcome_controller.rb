@@ -1,8 +1,5 @@
 class WelcomeController < ApplicationController
   def index
-  end
-
-  def main
-    render :layout => false
+    render :text => "", :layout => true
   end
 end

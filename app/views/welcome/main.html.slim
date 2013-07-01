@@ -28,6 +28,7 @@
         li Total Workout Time in Seconds:  {{ totalWorkoutTime() }}
 
       hr
+
       button(class='btn' ng-click="showTodo=!showTodo") Show TODO
       ul(ng-show="showTodo")
         li(ng-repeat="todo in todos") {{ todo }}
@@ -39,12 +40,13 @@
           select> ng-model="workoutType" ng-options="workout.title for workout in workoutTypes"
           | Workout Type
 
-        label <input required value=1 min=1 type=number ng-model="input.sets" /> Number Of Sets
-        label <input required value=0 min=0 type=number ng-model="input.setRest" /> Rest Between Sets
-        label <input required min=1 type=number ng-model="input.rounds" /> Number Of Rounds
-        label <input required min=1 type=number ng-model="input.roundLength" /> Length of Round
-        label <input required min=0 ng-model="input.roundRest" /> Rest Between Rounds
-        label <input min=0 ng-model="qotd" </input> Quote Of The Day
+        .custom(ng-show="workoutType.title=='Custom'")
+          label <input required value=1 min=1 type=number ng-model="input.sets" /> Number Of Sets
+          label <input required value=0 min=0 type=number ng-model="input.setRest" /> Rest Between Sets
+          label <input required min=1 type=number ng-model="input.rounds" /> Number Of Rounds
+          label <input required min=1 type=number ng-model="input.roundLength" /> Length of Round
+          label <input required min=0 ng-model="input.roundRest" /> Rest Between Rounds
+          label <input min=0 ng-model="qotd" </input> Quote Of The Day
 
   hr
   | &copy; 2013 Joe Van Dyk

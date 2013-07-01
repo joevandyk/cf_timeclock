@@ -29,7 +29,12 @@ app.directive "timer", ->
   restrict: "A"
   scope:
     time: "=timer"
-  template: "<span class='timer'>{{ time | time }}</div>"
+  link: ($scope) ->
+    $scope.$watch 'time', (n, o) ->
+      $scope.minutes = Math.floor(n / 60)
+      $scope.seconds = (n % 60).toFixed(1)
+
+  template: "<span class='timer'><span class='minutes'>{{ minutes }} min</span> </span><span class='seconds'>{{seconds}} </span></span>"
 
 
 app.controller "MainCtrl", ($scope, $timeout) ->
@@ -97,12 +102,23 @@ app.controller "MainCtrl", ($scope, $timeout) ->
   $scope.input = {}
 
   $scope.workoutTypes = [
-    {title: "Testing",              sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 3 }
+    {title: "Custom",               sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 3 }
     {title: "Tabata",               sets: 4, setRest: 60, rounds: 8, roundRest: 10, roundLength: 20 }
     {title: "Fight Gone Bad",       sets: 3, setRest: 60, rounds: 5, roundRest: 0,  roundLength: 60 }
     {title: "Fight Gone Bad Champ", sets: 5, setRest: 60, rounds: 5, roundRest: 0,  roundLength: 60 }
-    {title: "7 min",                sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 700 }
-    {title: "30 min",               sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 3000 }
+    {title: "1 minutes",            sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 100 }
+    {title: "3 minutes",            sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 300 }
+    {title: "5 minutes",            sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 500 }
+    {title: "7 minutes",            sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 700 }
+    {title: "10 minutes",           sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 1000 }
+    {title: "12 minutes",           sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 1200 }
+    {title: "15 minutes",           sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 1500 }
+    {title: "20 minutes",           sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 2000 }
+    {title: "25 minutes",           sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 2500 }
+    {title: "30 minutes",           sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 3000 }
+    {title: "40 minutes",           sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 4000 }
+    {title: "50 minutes",           sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 5000 }
+    {title: "60 minutes",           sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 6000 }
   ]
 
   # Sets the inputs from a predetermined workout type
@@ -128,24 +144,4 @@ app.controller "MainCtrl", ($scope, $timeout) ->
   $scope.reset()
   $scope.workoutType = $scope.workoutTypes[0]
   #$scope.start()
-
-app.filter "time", ->
-  (time) ->
-    minutes = Math.floor(time / 60)
-    seconds = (time % 60).toFixed(1)
-    # TODO use pluralize directive here
-    text = ""
-    if minutes > 0
-      text += "#{minutes} minute"
-    if minutes > 1
-      text += "s"
-    if minutes > 0
-      text += " "
-
-    text += "#{seconds} second"
-    if seconds != 1
-      text += "s"
-
-    text
-
 

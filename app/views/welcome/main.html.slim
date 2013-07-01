@@ -13,8 +13,9 @@
 
   .row
     .span6
-      button(class='btn btn-primary btn-large' ng-disabled="!workoutForm.$valid" ng-show="canStart()" ng-click="go()") Start
-      button(class='btn btn-large' ng-show="canContinue()" ng-click="go()") Continue
+      button(class='btn btn-primary btn-large' ng-show="workoutForm.$valid && canStart()" ng-click="go()") Start
+      div(class='alert alert-error' ng-show="!workoutForm.$valid") Please make sure all the form fields are entered.
+      button(class='btn btn-primary btn-large' ng-show="canContinue()" ng-click="go()") Continue
       button(class='btn btn-large' ng-show="canPause()" ng-click="pause()") Pause
       button<(class='btn btn-large' ng-show="canReset()" ng-click="reset()") Reset
 
@@ -32,25 +33,28 @@
 
       hr
 
-      button(class='btn' ng-click="showTodo=!showTodo") Show TODO
-      ul(ng-show="showTodo")
+      p TODO
+      ul
         li(ng-repeat="todo in todos") {{ todo }}
 
     .span6
-      form(ng-show="!inProgress && !workoutDone" name="workoutForm" )
+      form(ng-show="canStart()" name="workoutForm" )
         h5(class="label label-info") Setup Workout
         label
           select> ng-model="workoutType" ng-options="workout.title for workout in workoutTypes"
           | Workout Type
 
-        .custom(ng-show="workoutType.title=='Custom'")
-          label <input required value=1 min=1 type=number ng-model="input.sets" /> Number Of Sets
+          label(ng-show="workoutType.title != 'Custom' && !input.customize")
+            button(ng-click="input.customize=true") Customize
+
+        .custom(ng-show="customized()")
+          label <input required value=1 min=1 type=number ng-model="input.sets" /> Number Of Sets   <span class="error" ng-show="workoutForm.sets.$error.required">Required!</span>
           label <input required value=0 min=0 type=number ng-model="input.setRest" /> Rest Between Sets
           label <input required min=1 type=number ng-model="input.rounds" /> Number Of Rounds
           label <input required min=1 type=number ng-model="input.roundLength" /> Length of Round
           label <input required min=0 ng-model="input.roundRest" /> Rest Between Rounds
-          label <input required min=0 ng-model="input.prepTime" /> Prep Time
-          label <input min=0 ng-model="qotd" </input> Quote Of The Day
+        label <input required min=0 ng-model="input.prepTime" /> Prep Time
+        label <input min=0 ng-model="qotd" </input> Quote Of The Day
 
   hr
   | &copy; 2013 Joe Van Dyk

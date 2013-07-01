@@ -38,8 +38,30 @@ app.directive "timer", ->
 
 
 app.controller "MainCtrl", ($scope, $timeout) ->
+  $scope.timers = []
+
+  $scope.safeApply = (fn) ->
+    phase = @$root.$$phase
+    if phase is "$apply" or phase is "$digest"
+      fn()  if fn and (typeof (fn) is "function")
+    else
+      @$apply fn
+
+  $scope.reset = ->
+    $scope.timer = new WorkoutTimer
+    $scope.timer.setTime($scope.totalWorkoutTime())
+    $scope.timer.onTick ->
+      $scope.safeApply ->
+        $scope.state = $scope.timer.getState()
+        $scope.workoutTime = $scope.timer.getCounter()
+    $scope.timer.onFinish ->
+      console.log "DONE!"
+
+    $scope.workoutTime = $scope.timer.getCounter()
+    $scope.state = $scope.timer.getState()
+
   $scope.percentDone = ->
-    $scope.workoutTime / $scope.totalWorkoutTime() * 100
+    $scope.timer.percentDone()
 
   angular.element(document).bind 'keyup', (event) ->
     if event.keyCode == 13
@@ -49,7 +71,7 @@ app.controller "MainCtrl", ($scope, $timeout) ->
         $scope.pause()
 
   $scope.todos = [
-    "Wait 10 seconds before starting workout",
+    "Wait for the prep time before starting workout",
     "Rounds",
     "Rest Between Rounds",
     "Sets",
@@ -62,76 +84,24 @@ app.controller "MainCtrl", ($scope, $timeout) ->
   $scope.canGo       = -> $scope.canStart() or $scope.canContinue()
   $scope.canStart    = -> $scope.state == 'unstarted'
   $scope.canContinue = -> $scope.state == 'paused'
-  $scope.canPause    = -> $scope.state == 'working' or $scope.state == 'prepping'
+  $scope.canPause    = -> $scope.state == 'running'
   $scope.canReset    = -> $scope.state == 'paused' || $scope.state == 'finished'
 
   updateInterval = 25
 
-  workingCb = ->
-    $scope.workoutTime = currentTime() - $scope.startTime - $scope.pausedLength
-    if $scope.workoutTime >= $scope.totalWorkoutTime()
-      $scope.state = 'finished'
-      $scope.workoutTime = $scope.totalWorkoutTime()
-    else if $scope.state != 'paused'
-      $timeout workingCb, updateInterval
-
-  preppingCb = ->
-    $scope.workoutTime = $scope.prepTime() - (currentTime() - $scope.prepStartTime) + $scope.pausedLength
-    if $scope.workoutTime > 0
-      if $scope.state != 'paused'
-        $timeout preppingCb, updateInterval
-    else
-      # TODO remove duplication
-      $scope.state = "working"
-      $scope.startTime = currentTime()
-      $scope.workoutStarted = true
-      $timeout workingCb
-
-
   $scope.go = ->
-    if $scope.state == 'unstarted'
-      $scope.start()
-    else
-      $scope.continue()
-
-  $scope.start = ->
-    if $scope.prepTime() > 0
-      $scope.state = "prepping"
-      $scope.prepStartTime = currentTime()
-      $timeout preppingCb
-    else
-      $scope.state = "working"
-      $scope.startTime = currentTime()
-      $scope.workoutStarted = true
-      $timeout workingCb
-
-  $scope.continue = ->
-    $scope.pausedLength += currentTime() - $scope.pausedAt
-    if $scope.workoutStarted
-      $scope.state = 'working'
-      $timeout workingCb, updateInterval
-    else
-      $scope.state = 'prepping'
-      $timeout preppingCb, updateInterval
+    $scope.timer.go()
 
   $scope.pause = ->
-    $scope.state = 'paused'
-    $scope.pausedAt = currentTime()
-
-  $scope.reset = ->
-    $scope.state = 'unstarted'
-    $scope.startTime = null
-    $scope.workoutTime = $scope.prepTime()
-    $scope.pausedLength = 0
+    $scope.timer.pause()
 
   $scope.input = {}
 
   $scope.workoutTypes = [
-    {title: "Custom",               sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 3 }
     {title: "Tabata",               sets: 4, setRest: 60, rounds: 8, roundRest: 10, roundLength: 20 }
     {title: "Fight Gone Bad",       sets: 3, setRest: 60, rounds: 5, roundRest: 0,  roundLength: 60 }
     {title: "Fight Gone Bad Champ", sets: 5, setRest: 60, rounds: 5, roundRest: 0,  roundLength: 60 }
-    {title: "1 minutes",            sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 100 }
+    {title: "1 minute",            sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 100 }
     {title: "3 minutes",            sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 300 }
     {title: "5 minutes",            sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 500 }
     {title: "7 minutes",            sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 700 }
@@ -144,14 +114,21 @@ app.controller "MainCtrl", ($scope, $timeout) ->
     {title: "40 minutes",           sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 4000 }
     {title: "50 minutes",           sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 5000 }
     {title: "60 minutes",           sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 6000 }
+    {title: "Custom",               sets: 1, setRest: 0,  rounds: 1, roundRest: 0,  roundLength: 3 }
   ]
+
+  $scope.customized = ->
+    $scope.workoutType.title == 'Custom' || $scope.input.customize == true
 
   # Sets the inputs from a predetermined workout type
   $scope.$watch "workoutType", (n) ->
-    $scope.input = n if n
-    $scope.workoutTime = $scope.input.prepTime = 3
+    angular.copy(n, $scope.input)
+    $scope.input.prepTime = 3
 
-  $scope.timeLeft =       -> $scope.totalWorkoutTime() - $scope.workoutTime
+  $scope.timeLeft =       -> $scope.timer.getTime() - $scope.timer.getCounter()
+
+  $scope.$watch 'totalWorkoutTime()', (n) ->
+    $scope.timer.setTime(n)
 
   $scope.numberOfRounds = -> retrieveNumber($scope.input.rounds)
   $scope.numberOfSets   = -> retrieveNumber($scope.input.sets)
